@@ -8,7 +8,7 @@ interface UseWebSocketOptions {
   url?: string
 }
 
-export function useWebSocket({ onFraudDetected, onAiExplanationUpdated, url = 'http://localhost:3001' }: UseWebSocketOptions) {
+export function useWebSocket({ onFraudDetected, onAiExplanationUpdated, url = 'http://localhost:3000' }: UseWebSocketOptions) {
   const socketRef = useRef<Socket | null>(null)
   const reconnectTimeoutRef = useRef<number | null>(null)
   const reconnectAttemptsRef = useRef(0)

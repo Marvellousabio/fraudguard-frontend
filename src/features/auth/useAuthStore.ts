@@ -3,21 +3,31 @@ import { persist } from 'zustand/middleware'
 import type { UserRole } from '@/shared/types/transaction'
 
 interface AuthState {
-  token: string | null
+  accessToken: string | null
+  refreshToken: string | null
   role: UserRole | null
   name: string | null
-  setAuth: (token: string, role: UserRole, name: string) => void
+  userId: string | null
+  setAuth: (accessToken: string, role: UserRole, name: string, userId?: string, refreshToken?: string) => void
   logout: () => void
 }
 
 export const useAuthStore = create<AuthState>()(
   persist(
     (set) => ({
-      token: null,
+      accessToken: null,
+      refreshToken: null,
       role: null,
       name: null,
-      setAuth: (token, role, name) => set({ token, role, name }),
-      logout: () => set({ token: null, role: null, name: null }),
+      userId: null,
+      setAuth: (accessToken, role, name, userId, refreshToken) => set({
+        accessToken,
+        refreshToken: refreshToken ?? null,
+        role,
+        name,
+        userId: userId ?? null,
+      }),
+      logout: () => set({ accessToken: null, refreshToken: null, role: null, name: null, userId: null }),
     }),
     {
       name: 'fraudguard-auth',

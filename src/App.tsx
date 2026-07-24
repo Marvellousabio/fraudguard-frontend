@@ -5,6 +5,12 @@ import AnalystDashboard from '@/features/dashboard/AnalystDashboard'
 import ComplianceDashboard from '@/features/dashboard/ComplianceDashboard'
 import DeveloperDashboard from '@/features/dashboard/DeveloperDashboard'
 
+const roleToPath: Record<string, string> = {
+  FRAUD_ANALYST: 'analyst',
+  COMPLIANCE_OFFICER: 'compliance',
+  BACKEND_DEVELOPER: 'developer',
+}
+
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles: string[] }) {
   const { role } = useAuthStore()
   if (!role) return <Navigate to="/login" replace />
@@ -14,10 +20,11 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles:
 
 export default function App() {
   const { role } = useAuthStore()
+  const dashboardPath = role ? roleToPath[role] : 'analyst'
 
   return (
     <Routes>
-      <Route path="/login" element={role ? <Navigate to={`/dashboard/${role.toLowerCase()}`} replace /> : <LoginPage />} />
+      <Route path="/login" element={role ? <Navigate to={`/dashboard/${dashboardPath}`} replace /> : <LoginPage />} />
       <Route path="/dashboard/analyst" element={<ProtectedRoute roles={['FRAUD_ANALYST']}><AnalystDashboard /></ProtectedRoute>} />
       <Route path="/dashboard/compliance" element={<ProtectedRoute roles={['COMPLIANCE_OFFICER']}><ComplianceDashboard /></ProtectedRoute>} />
       <Route path="/dashboard/developer" element={<ProtectedRoute roles={['BACKEND_DEVELOPER']}><DeveloperDashboard /></ProtectedRoute>} />

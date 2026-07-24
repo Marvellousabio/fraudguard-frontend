@@ -1,40 +1,98 @@
 import { http, HttpResponse, delay } from 'msw'
 import { seedTransactions } from './seed-data'
 import type { FlaggedTransaction } from '@/shared/types/transaction'
+import {
+  generateTransaction,
+  generateMockAnalytics,
+  DEFAULT_RULES,
+  DEFAULT_SIMULATOR_CONFIG,
+  generateMockAIExplanation,
+} from './analystSeed'
+import type { Transaction, FraudRule, SimulatorConfig } from '@/shared/types/fraud'
 
 const DB_KEY = 'fraudguard_mock_db'
+const ANALYST_DB_KEY = 'fraudguard_analyst_mock_db'
 
-function getDb(): { transactions: FlaggedTransaction[]; confirmedIds: Set<string> } {
+type OldDb = { transactions: FlaggedTransaction[]; confirmedIds: Set<string> }
+type AnalystDb = {
+  transactions: Transaction[]
+  rules: FraudRule[]
+  simulatorConfig: SimulatorConfig
+  aiExplanations: Record<string, ReturnType<typeof generateMockAIExplanation>>
+}
+
+function getOldDb(): OldDb {
   try {
     const raw = localStorage.getItem(DB_KEY)
     if (raw) return JSON.parse(raw)
   } catch { /* ignore */ }
   const seed = seedTransactions(50)
   const db = { transactions: seed, confirmedIds: new Set<string>() }
-  saveDb(db)
+  saveOldDb(db)
   return db
 }
 
-function saveDb(db: { transactions: FlaggedTransaction[]; confirmedIds: Set<string> }) {
+function saveOldDb(db: OldDb) {
   localStorage.setItem(DB_KEY, JSON.stringify(db))
 }
 
+function getAnalystDb(): AnalystDb {
+  try {
+    const raw = localStorage.getItem(ANALYST_DB_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch { /* ignore */ }
+  const transactions = Array.from({ length: 50 }, (_, i) => generateTransaction(i))
+  const db: AnalystDb = {
+    transactions,
+    rules: DEFAULT_RULES.map((r) => ({ ...r })),
+    simulatorConfig: { ...DEFAULT_SIMULATOR_CONFIG },
+    aiExplanations: {},
+  }
+  saveAnalystDb(db)
+  return db
+}
+
+function saveAnalystDb(db: AnalystDb) {
+  localStorage.setItem(ANALYST_DB_KEY, JSON.stringify(db))
+}
+
 export const handlers = [
-  http.post('/api/auth/login', async ({ request }) => {
+  http.post('/auth/login', async ({ request }) => {
     await delay(300)
-    const body = await request.json() as { username: string; password: string }
-    const roleMap: Record<string, string> = {
-      admin: 'COMPLIANCE_OFFICER',
-      analyst: 'FRAUD_ANALYST',
-      dev: 'BACKEND_DEVELOPER',
+    const body = await request.json() as { email: string; password: string }
+    const email = body.email
+    let role: string
+    if (email.includes('admin') || email.includes('compliance')) {
+      role = 'COMPLIANCE_OFFICER'
+    } else if (email.includes('analyst') || email.includes('fraud')) {
+      role = 'FRAUD_ANALYST'
+    } else if (email.includes('dev') || email.includes('developer') || email.includes('backend')) {
+      role = 'BACKEND_DEVELOPER'
+    } else {
+      role = 'FRAUD_ANALYST'
     }
-    const role = roleMap[body.username]
-    if (!role) return HttpResponse.json({ message: 'Invalid credentials' }, { status: 401 })
     return HttpResponse.json({
-      token: `mock-token-${body.username}`,
-      role,
-      name: body.username.charAt(0).toUpperCase() + body.username.slice(1),
+      accessToken: `mock-access-token-${email}`,
+      refreshToken: `mock-refresh-token-${email}`,
+      user: { id: '1', email, name: email.split('@')[0], role },
     })
+  }),
+
+  http.get('/auth/me', async ({ request }) => {
+    await delay(100)
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+    const token = authHeader.replace('Bearer ', '')
+    const roleMap: Record<string, string> = {
+      'mock-access-token-admin@fraudguard.com': 'COMPLIANCE_OFFICER',
+      'mock-access-token-analyst@fraudguard.com': 'FRAUD_ANALYST',
+      'mock-access-token-dev@fraudguard.com': 'BACKEND_DEVELOPER',
+    }
+    const role = roleMap[token]
+    if (!role) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    return HttpResponse.json({ id: '1', email: role, name: role, role })
   }),
 
   http.get('/api/transactions/flagged', async ({ request }) => {
@@ -45,7 +103,7 @@ export const handlers = [
     const ruleType = url.searchParams.get('ruleType') as FlaggedTransaction['reason'] | undefined
     const minRiskScore = url.searchParams.get('minRiskScore') ? parseFloat(url.searchParams.get('minRiskScore')!) : undefined
 
-    let db = getDb()
+    let db = getOldDb()
     let filtered = db.transactions
 
     if (ruleType) filtered = filtered.filter(t => t.reason === ruleType)
@@ -66,7 +124,7 @@ export const handlers = [
 
   http.get('/api/transactions/flagged/:id', async ({ params }) => {
     await delay(150)
-    const db = getDb()
+    const db = getOldDb()
     const tx = db.transactions.find(t => t.id === params.id)
     if (!tx) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
     return HttpResponse.json(tx)
@@ -74,7 +132,7 @@ export const handlers = [
 
   http.post('/api/transactions/:id/confirm-fraud', async ({ params }) => {
     await delay(400)
-    const db = getDb()
+    const db = getOldDb()
     const txIndex = db.transactions.findIndex(t => t.id === params.id)
     if (txIndex === -1) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
 
@@ -83,14 +141,14 @@ export const handlers = [
       vectorFeedbackStatus: 'SUBMITTED',
     }
     db.confirmedIds.add(params.id as string)
-    saveDb(db)
+    saveOldDb(db)
 
     return HttpResponse.json({ success: true, status: 'SUBMITTED' })
   }),
 
   http.get('/api/analytics/summary', async () => {
     await delay(200)
-    const db = getDb()
+    const db = getOldDb()
     const today = new Date().toDateString()
     const todayTxs = db.transactions.filter(t => new Date(t.timestamp).toDateString() === today)
 
@@ -115,7 +173,7 @@ export const handlers = [
 
   http.get('/api/analytics/timeseries', async () => {
     await delay(200)
-    const db = getDb()
+    const db = getOldDb()
     const buckets: { timestamp: string; count: number }[] = []
     const now = new Date()
 
@@ -145,7 +203,7 @@ export const handlers = [
     const startDate = url.searchParams.get('startDate')
     const endDate = url.searchParams.get('endDate')
 
-    let db = getDb()
+    let db = getOldDb()
     let filtered = db.transactions
 
     if (startDate) {
@@ -169,6 +227,119 @@ export const handlers = [
       },
     })
   }),
+
+  http.get('/api/transactions', async ({ request }) => {
+    await delay(200)
+    const url = new URL(request.url)
+    const limit = parseInt(url.searchParams.get('limit') || '100')
+    const db = getAnalystDb()
+    const sorted = [...db.transactions].sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
+    return HttpResponse.json(sorted.slice(0, limit))
+  }),
+
+  http.get('/api/analytics', async () => {
+    await delay(200)
+    const db = getAnalystDb()
+    const result = generateMockAnalytics(db.transactions)
+    return HttpResponse.json(result)
+  }),
+
+  http.get('/api/rules', async () => {
+    await delay(150)
+    const db = getAnalystDb()
+    return HttpResponse.json(db.rules)
+  }),
+
+  http.put('/api/rules/:id', async ({ params, request }) => {
+    await delay(200)
+    const db = getAnalystDb()
+    const index = db.rules.findIndex(r => r.id === params.id)
+    if (index === -1) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
+    const updated = await request.json() as FraudRule
+    db.rules[index] = updated
+    saveAnalystDb(db)
+    return HttpResponse.json(updated)
+  }),
+
+  http.post('/api/simulator/config', async ({ request }) => {
+    await delay(150)
+    const db = getAnalystDb()
+    const patch = await request.json() as Partial<SimulatorConfig>
+    db.simulatorConfig = { ...db.simulatorConfig, ...patch }
+    saveAnalystDb(db)
+    return HttpResponse.json(db.simulatorConfig)
+  }),
+
+  http.post('/api/fraud/ai-explain', async ({ request }) => {
+    await delay(400)
+    const body = await request.json() as { transactionId: string }
+    const db = getAnalystDb()
+    const txIndex = db.transactions.findIndex(t => t.id === body.transactionId)
+    if (txIndex === -1) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
+
+    const explanation = generateMockAIExplanation(db.transactions[txIndex])
+    db.aiExplanations[body.transactionId] = explanation
+    db.transactions[txIndex] = { ...db.transactions[txIndex], aiExplanation: explanation }
+    saveAnalystDb(db)
+    return HttpResponse.json(explanation)
+  }),
+
+  http.post('/api/feedback', async ({ request }) => {
+    await delay(300)
+    const body = await request.json() as { transactionId: string; status: 'CONFIRMED_FRAUD' | 'FALSE_POSITIVE' }
+    const db = getAnalystDb()
+    const txIndex = db.transactions.findIndex(t => t.id === body.transactionId)
+    if (txIndex === -1) return HttpResponse.json({ message: 'Not found' }, { status: 404 })
+
+    db.transactions[txIndex] = { ...db.transactions[txIndex], feedbackStatus: body.status }
+    saveAnalystDb(db)
+    return HttpResponse.json(db.transactions[txIndex])
+  }),
+
+  http.get('/api/export/transactions', async () => {
+    await delay(300)
+    const db = getAnalystDb()
+    const headers = 'id,timestamp,amount,currency,accountId,accountName,cardLast4,merchant,merchantCategory,location.city,location.country,deviceFingerprint,ipAddress,cardType,isInternational,isCardNotPresent,status,riskScore,riskLevel,triggeredRules,latencyMs,feedbackStatus\n'
+    const rows = db.transactions.map(t =>
+      `${t.id},"${t.timestamp}",${t.amount},${t.currency},${t.accountId},"${t.accountName}","${t.cardLast4}","${t.merchant}",${t.merchantCategory},"${t.location.city}","${t.location.country}","${t.deviceFingerprint}","${t.ipAddress}","${t.cardType}",${t.isInternational},${t.isCardNotPresent},${t.status},${t.riskScore},${t.riskLevel},"${t.triggeredRules.join(';')}",${t.latencyMs},${t.feedbackStatus ?? ''}`
+    ).join('\n')
+    return new HttpResponse(headers + rows, {
+      headers: {
+        'Content-Type': 'text/csv',
+        'Content-Disposition': `attachment; filename="fraudguard-transactions-${Date.now()}.csv"`,
+      },
+    })
+  }),
+
+  http.get('/api/stream/transactions', async () => {
+    const db = getAnalystDb()
+    const controller = new ReadableStream({
+      start(controller) {
+        const { speedMs, isRunning } = db.simulatorConfig
+        if (!isRunning) return
+
+        const interval = setInterval(() => {
+          const tx = generateTransaction(Date.now())
+          db.transactions.unshift(tx)
+          if (db.transactions.length > 500) db.transactions.pop()
+          saveAnalystDb(db)
+
+          const data = `data: ${JSON.stringify(tx)}\n\n`
+          controller.enqueue(new TextEncoder().encode(data))
+        }, speedMs)
+
+        return () => clearInterval(interval)
+      },
+    })
+
+    return new HttpResponse(controller, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        Connection: 'keep-alive',
+      },
+    })
+  }),
 ]
 
-export { getDb, saveDb }
+export { getOldDb, saveOldDb, getAnalystDb, saveAnalystDb }

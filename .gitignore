@@ -1,13 +1,14 @@
 # Dependencies
 node_modules/
 jspm_packages/
-
+srcr/
 # Production builds
 dist/
 build/
 .next/
-out/
+out/2
 .kilo/
+fraudguard
 
 # Environment variables and local config
 .env

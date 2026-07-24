@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label'
 import { useAuthStore } from './useAuthStore'
 
 export default function LoginPage() {
-  const [username, setUsername] = useState('')
+  const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
@@ -20,10 +20,10 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username, password }),
+        body: JSON.stringify({ email, password }),
       })
 
       if (!res.ok) {
@@ -32,8 +32,8 @@ export default function LoginPage() {
       }
 
       const data = await res.json()
-      setAuth(data.token, data.role, data.name)
-      navigate(`/dashboard/${data.role.toLowerCase()}`)
+      setAuth(data.accessToken, data.user.role, data.user.name)
+      navigate(`/dashboard/${data.user.role.toLowerCase()}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
     } finally {
@@ -63,15 +63,15 @@ export default function LoginPage() {
               </div>
             )}
             <div className="space-y-2">
-              <Label htmlFor="username">Username</Label>
+              <Label htmlFor="email">Email</Label>
               <Input
-                id="username"
-                type="text"
-                placeholder="admin, analyst, or dev"
-                value={username}
-                onChange={(e) => setUsername(e.target.value)}
+                id="email"
+                type="email"
+                placeholder="admin@fraudguard.com"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
                 required
-                autoComplete="username"
+                autoComplete="email"
               />
             </div>
             <div className="space-y-2">
@@ -90,8 +90,8 @@ export default function LoginPage() {
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
             <div className="text-xs text-muted-foreground text-center space-y-1">
-              <p>Demo accounts:</p>
-              <p>admin / analyst / dev (any password)</p>
+              <p>Demo accounts (use email as username):</p>
+              <p>admin@fraudguard.com / analyst@fraudguard.com / dev@fraudguard.com</p>
             </div>
           </form>
         </CardContent>
