@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
+import { apiFetch } from '@/lib/api'
 import { useAuthStore } from './useAuthStore'
 
 export default function LoginPage() {
@@ -20,7 +21,7 @@ export default function LoginPage() {
     setError('')
 
     try {
-      const res = await fetch('/auth/login', {
+      const res = await apiFetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password }),

@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef } from 'react';
 import type { AnalyticsSummary, HeatmapPoint, SimulatorConfig, Transaction, FraudRule } from '@/shared/types/fraud';
+import { apiFetch } from '@/lib/api';
 import { Header } from '@/features/analyst-dashboard/Header';
 import { MetricCards } from '@/features/analyst-dashboard/MetricCards';
 import { LiveFeedTicker } from '@/features/analyst-dashboard/LiveFeedTicker';
 import { TransactionTable } from '@/features/analyst-dashboard/TransactionTable';
 import { FraudDetailsDrawer } from '@/features/analyst-dashboard/FraudDetailsDrawer';
 import { GeoHeatmap } from '@/features/analyst-dashboard/GeoHeatmap';
+import { LeafletHeatmap } from '@/features/analyst-dashboard/LeafletHeatmap';
 import { AnalyticsCharts } from '@/features/analyst-dashboard/AnalyticsCharts';
 import { RuleEngineManager } from '@/features/analyst-dashboard/RuleEngineManager';
 import { RiskDistributionBar } from '@/features/analyst-dashboard/RiskDistributionBar';
@@ -44,9 +46,9 @@ export default function AnalystDashboard() {
   const fetchAllData = async () => {
     try {
       const [txRes, analyticsRes, rulesRes] = await Promise.all([
-        fetch('/api/transactions?limit=100'),
-        fetch('/api/analytics'),
-        fetch('/api/rules'),
+        apiFetch('/api/transactions?limit=100'),
+        apiFetch('/api/analytics'),
+        apiFetch('/api/rules'),
       ]);
 
       if (txRes.ok) {
@@ -87,7 +89,7 @@ export default function AnalystDashboard() {
 
         // Refresh analytics periodically
         if (Math.random() < 0.25) {
-          fetch('/api/analytics')
+          apiFetch('/api/analytics')
             .then((res) => res.json())
             .then((data) => setAnalytics(data))
             .catch(() => {});
@@ -270,7 +272,7 @@ export default function AnalystDashboard() {
 
         {activeTab === 'GEO_MAP' && (
           <div className="space-y-6">
-            <GeoHeatmap
+            <LeafletHeatmap
               heatmapPoints={analytics?.heatmapPoints || []}
               latestTransactions={transactions}
             />
