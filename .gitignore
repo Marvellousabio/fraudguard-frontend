@@ -8,7 +8,7 @@ build/
 .next/
 out/2
 .kilo/
-fraudguard
+fraudguard/
 
 # Environment variables and local config
 .env
