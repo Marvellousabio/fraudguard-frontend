@@ -1,12 +1,38 @@
+import { useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { ExportButton } from '@/shared/components/ExportButton'
 import { TimeSeriesChart } from '@/features/dashboard/TimeSeriesChart'
 import type { FlaggedTransaction } from '@/shared/types/transaction'
-import { BarChart3, FileText, Shield, TrendingUp } from 'lucide-react'
+import { BarChart3, FileText, Shield, TrendingUp, LogOut } from 'lucide-react'
+import { useAuthStore } from '@/features/auth/useAuthStore'
+import { useNavigate } from 'react-router-dom'
+import { apiFetch } from '@/lib/api'
 
 export default function ComplianceDashboard() {
+  const { accessToken, logout } = useAuthStore()
+  const navigate = useNavigate()
+  const [signingOut, setSigningOut] = useState(false)
+
+  const handleSignOut = async () => {
+    setSigningOut(true)
+    try {
+      await apiFetch('/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+    } catch {
+      // Ignore logout API errors — clear local state regardless
+    } finally {
+      logout()
+      navigate('/login')
+    }
+  }
+
   const { data: summary } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: async () => {
@@ -40,7 +66,17 @@ export default function ComplianceDashboard() {
               <p className="text-xs text-muted-foreground">Compliance Dashboard</p>
             </div>
           </div>
-          <Badge variant="secondary">Compliance Officer</Badge>
+          <div className="flex items-center gap-3">
+            <Badge variant="secondary">Compliance Officer</Badge>
+            <button
+              onClick={handleSignOut}
+              disabled={signingOut}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-medium bg-destructive/10 text-destructive hover:bg-destructive/20 transition-colors disabled:opacity-50"
+            >
+              <LogOut className="w-4 h-4" />
+              {signingOut ? 'Signing out...' : 'Sign Out'}
+            </button>
+          </div>
         </div>
       </header>
 

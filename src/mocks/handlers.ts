@@ -12,6 +12,7 @@ import type { Transaction, FraudRule, SimulatorConfig } from '@/shared/types/fra
 
 const DB_KEY = 'fraudguard_mock_db'
 const ANALYST_DB_KEY = 'fraudguard_analyst_mock_db'
+const AUTH_DB_KEY = 'fraudguard_auth_mock_db'
 
 type OldDb = { transactions: FlaggedTransaction[]; confirmedIds: Set<string> }
 type AnalystDb = {
@@ -20,6 +21,7 @@ type AnalystDb = {
   simulatorConfig: SimulatorConfig
   aiExplanations: Record<string, ReturnType<typeof generateMockAIExplanation>>
 }
+type AuthDb = Record<string, { email: string; name: string; role: string; password: string; otp?: string }>
 
 function getOldDb(): OldDb {
   try {
@@ -56,25 +58,98 @@ function saveAnalystDb(db: AnalystDb) {
   localStorage.setItem(ANALYST_DB_KEY, JSON.stringify(db))
 }
 
+function getAuthDb(): AuthDb {
+  try {
+    const raw = localStorage.getItem(AUTH_DB_KEY)
+    if (raw) return JSON.parse(raw)
+  } catch { /* ignore */ }
+  return {}
+}
+
+function saveAuthDb(db: AuthDb) {
+  localStorage.setItem(AUTH_DB_KEY, JSON.stringify(db))
+}
+
 export const handlers = [
+  http.post('/auth/register', async ({ request }) => {
+    await delay(300)
+    const body = await request.json() as { email: string; name: string; role: string }
+    const db = getAuthDb()
+
+    if (db[body.email]) {
+      return HttpResponse.json({ message: 'Email already registered' }, { status: 409 })
+    }
+
+    const otp = Math.floor(100000 + Math.random() * 900000).toString()
+    db[body.email] = { email: body.email, name: body.name, role: body.role, password: '', otp }
+    saveAuthDb(db)
+
+    return HttpResponse.json({ message: 'OTP sent to email', email: body.email, otp }, { status: 201 })
+  }),
+
+  http.post('/auth/verify-otp', async ({ request }) => {
+    await delay(200)
+    const body = await request.json() as { email: string; otp: string }
+    const db = getAuthDb()
+    const user = db[body.email]
+
+    if (!user) return HttpResponse.json({ message: 'User not found' }, { status: 404 })
+    if (user.otp !== body.otp) return HttpResponse.json({ message: 'Invalid OTP' }, { status: 400 })
+
+    return HttpResponse.json({ message: 'OTP verified', email: body.email })
+  }),
+
+  http.post('/auth/set-password', async ({ request }) => {
+    await delay(200)
+    const body = await request.json() as { email: string; password: string }
+    const db = getAuthDb()
+    const user = db[body.email]
+
+    if (!user) return HttpResponse.json({ message: 'User not found' }, { status: 404 })
+    if (!user.otp) return HttpResponse.json({ message: 'OTP not verified' }, { status: 400 })
+
+    user.password = body.password
+    user.otp = undefined
+    saveAuthDb(db)
+
+    return HttpResponse.json({ message: 'Password set successfully', email: body.email })
+  }),
+
+http.post('/auth/logout', async ({ request }) => {
+    await delay(200)
+    const authHeader = request.headers.get('authorization')
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
+    }
+    return HttpResponse.json({ message: 'Logged out successfully' })
+  }),
+
   http.post('/auth/login', async ({ request }) => {
     await delay(300)
     const body = await request.json() as { email: string; password: string }
     const email = body.email
+    const db = getAuthDb()
+    const registeredUser = db[email]
+
     let role: string
-    if (email.includes('admin') || email.includes('compliance')) {
-      role = 'COMPLIANCE_OFFICER'
-    } else if (email.includes('analyst') || email.includes('fraud')) {
-      role = 'FRAUD_ANALYST'
-    } else if (email.includes('dev') || email.includes('developer') || email.includes('backend')) {
-      role = 'BACKEND_DEVELOPER'
+    if (registeredUser && registeredUser.password === body.password) {
+      role = registeredUser.role
     } else {
-      role = 'FRAUD_ANALYST'
+      if (email.includes('admin') || email.includes('compliance')) {
+        role = 'COMPLIANCE_OFFICER'
+      } else if (email.includes('analyst') || email.includes('fraud')) {
+        role = 'FRAUD_ANALYST'
+      } else if (email.includes('dev') || email.includes('developer') || email.includes('backend')) {
+        role = 'BACKEND_DEVELOPER'
+      } else {
+        role = 'FRAUD_ANALYST'
+      }
     }
+
     return HttpResponse.json({
       accessToken: `mock-access-token-${email}`,
       refreshToken: `mock-refresh-token-${email}`,
-      user: { id: '1', email, name: email.split('@')[0], role },
+      user: { id: '1', email, name: registeredUser?.name || email.split('@')[0], role },
     })
   }),
 
@@ -85,14 +160,18 @@ export const handlers = [
       return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
     }
     const token = authHeader.replace('Bearer ', '')
+    const email = token.replace('mock-access-token-', '')
+    const db = getAuthDb()
+    const registeredUser = db[email]
+
     const roleMap: Record<string, string> = {
       'mock-access-token-admin@fraudguard.com': 'COMPLIANCE_OFFICER',
       'mock-access-token-analyst@fraudguard.com': 'FRAUD_ANALYST',
       'mock-access-token-dev@fraudguard.com': 'BACKEND_DEVELOPER',
     }
-    const role = roleMap[token]
+    const role = registeredUser?.role || roleMap[token]
     if (!role) return HttpResponse.json({ message: 'Unauthorized' }, { status: 401 })
-    return HttpResponse.json({ id: '1', email: role, name: role, role })
+    return HttpResponse.json({ id: '1', email, name: registeredUser?.name || role, role })
   }),
 
   http.get('/api/transactions/flagged', async ({ request }) => {

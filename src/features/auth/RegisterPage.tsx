@@ -17,6 +17,7 @@ export default function RegisterPage() {
   const [name, setName] = useState('')
   const [role, setRole] = useState<string>('FRAUD_ANALYST')
   const [otp, setOtp] = useState('')
+  const [displayedOtp, setDisplayedOtp] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
@@ -40,31 +41,33 @@ export default function RegisterPage() {
     }
   }
 
-  const handleRegister = async (e: React.FormEvent) => {
-    e.preventDefault()
-    setLoading(true)
-    setError('')
-    setBackendDown(false)
+const handleRegister = async (e: React.FormEvent) => {
+     e.preventDefault()
+     setLoading(true)
+     setError('')
+     setBackendDown(false)
 
-    try {
-      const res = await apiFetch('/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, name, role }),
-      })
+     try {
+       const res = await apiFetch('/auth/register', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ email, name, role }),
+       })
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.message || 'Registration failed')
-      }
+       if (!res.ok) {
+         const data = await res.json()
+         throw new Error(data.message || 'Registration failed')
+       }
 
-      setStep('verify-otp')
-    } catch (err) {
-      handleBackendError(err)
-    } finally {
-      setLoading(false)
-    }
-  }
+       const data = await res.json()
+       setDisplayedOtp(data.otp)
+       setStep('verify-otp')
+     } catch (err) {
+       handleBackendError(err)
+     } finally {
+       setLoading(false)
+     }
+   }
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -239,22 +242,23 @@ export default function RegisterPage() {
                   {error}
                 </div>
               )}
-              <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground">
-                Enter the 6-digit OTP sent to <span className="font-semibold text-foreground">{email}</span>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="otp">One-Time Password</Label>
-                <Input
-                  id="otp"
-                  type="text"
-                  placeholder="123456"
-                  value={otp}
-                  onChange={(e) => setOtp(e.target.value)}
-                  required
-                  maxLength={6}
-                  autoComplete="off"
-                />
-              </div>
+              <div className="bg-muted/50 p-3 rounded-lg text-xs text-muted-foreground space-y-1">
+                 <p>Enter the 6-digit OTP sent to <span className="font-semibold text-foreground">{email}</span></p>
+                 <p className="font-mono text-foreground bg-background p-2 rounded text-center text-sm tracking-widest">{displayedOtp}</p>
+               </div>
+               <div className="space-y-2">
+                 <Label htmlFor="otp">One-Time Password</Label>
+                 <Input
+                   id="otp"
+                   type="text"
+                   placeholder="123456"
+                   value={otp}
+                   onChange={(e) => setOtp(e.target.value)}
+                   required
+                   maxLength={6}
+                   autoComplete="off"
+                 />
+               </div>
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? 'Verifying...' : 'Verify OTP'}
               </Button>

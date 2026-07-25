@@ -1,6 +1,9 @@
 import React from 'react';
-import { Shield, Download, Play, Pause, Moon, Sun } from 'lucide-react';
+import { Shield, Download, Play, Pause, Moon, Sun, LogOut } from 'lucide-react';
 import { SimulatorConfig } from '@/shared/types/fraud';
+import { useAuthStore } from '@/features/auth/useAuthStore';
+import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '@/lib/api';
 
 interface HeaderProps {
   isConnected: boolean;
@@ -25,6 +28,25 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onSelectTab,
 }) => {
+  const { accessToken, logout } = useAuthStore()
+  const navigate = useNavigate()
+
+  const handleSignOut = async () => {
+    try {
+      await apiFetch('/auth/logout', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+      })
+    } catch {
+      // Ignore logout API errors — clear local state regardless
+    } finally {
+      logout()
+      navigate('/login')
+    }
+  }
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 lg:px-8 py-3 transition-colors">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -184,6 +206,15 @@ export const Header: React.FC<HeaderProps> = ({
             title="Toggle Light/Dark Theme"
           >
             {isDarkMode ? <Sun className="h-4 w-4 text-amber-400" /> : <Moon className="h-4 w-4 text-slate-600" />}
+          </button>
+
+          {/* Sign Out */}
+          <button
+            onClick={handleSignOut}
+            className="p-2 rounded-xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/80 transition-colors"
+            title="Sign Out"
+          >
+            <LogOut className="h-4 w-4" />
           </button>
         </div>
       </div>

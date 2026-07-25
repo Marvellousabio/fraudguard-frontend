@@ -82,12 +82,12 @@ export default function LoginPage() {
               <BackendUnavailableBanner />
             </div>
           )}
+          {error && !backendDown && (
+            <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md mb-4">
+              {error}
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && !backendDown && (
-              <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
-                {error}
-              </div>
-            )}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -99,6 +99,9 @@ export default function LoginPage() {
                 required
                 autoComplete="email"
               />
+              <p className="text-xs text-muted-foreground">
+                Backend requires a valid email address (e.g. analyst@fraudguard.com)
+              </p>
             </div>
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
@@ -110,7 +113,11 @@ export default function LoginPage() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 autoComplete="current-password"
+                minLength={1}
               />
+              <p className="text-xs text-muted-foreground">
+                Backend requires a non-empty password string
+              </p>
             </div>
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
