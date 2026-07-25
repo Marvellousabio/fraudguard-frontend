@@ -6,6 +6,7 @@ import ProfileSettingsPage from '@/features/auth/ProfileSettingsPage'
 import AnalystDashboard from '@/features/dashboard/AnalystDashboard'
 import ComplianceDashboard from '@/features/dashboard/ComplianceDashboard'
 import DeveloperDashboard from '@/features/dashboard/DeveloperDashboard'
+import LandingPage from '@/features/landing/LandingPage'
 
 const roleToPath: Record<string, string> = {
   FRAUD_ANALYST: 'analyst',
@@ -26,6 +27,7 @@ export default function App() {
 
   return (
     <Routes>
+      <Route path="/" element={<LandingPage />} />
       <Route path="/login" element={role ? <Navigate to={`/dashboard/${dashboardPath}`} replace /> : <LoginPage />} />
       <Route path="/register" element={role ? <Navigate to={`/dashboard/${dashboardPath}`} replace /> : <RegisterPage />} />
       <Route path="/profile" element={<ProtectedRoute roles={['FRAUD_ANALYST', 'COMPLIANCE_OFFICER', 'BACKEND_DEVELOPER']}><ProfileSettingsPage /></ProtectedRoute>} />

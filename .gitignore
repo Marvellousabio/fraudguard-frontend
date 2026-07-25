@@ -9,6 +9,7 @@ build/
 out/2
 .kilo/
 fraudguard/
+fraud/
 
 # Environment variables and local config
 .env
