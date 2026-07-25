@@ -6,12 +6,14 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { apiFetch } from '@/lib/api'
 import { useAuthStore } from './useAuthStore'
+import { BackendUnavailableBanner } from '@/features/analyst-dashboard/BackendUnavailableBanner'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
+  const [backendDown, setBackendDown] = useState(false)
   const navigate = useNavigate()
   const setAuth = useAuthStore(s => s.setAuth)
 
@@ -19,6 +21,7 @@ export default function LoginPage() {
     e.preventDefault()
     setLoading(true)
     setError('')
+    setBackendDown(false)
 
     try {
       const res = await apiFetch('/auth/login', {
@@ -27,16 +30,22 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
 
-      if (!res.ok) {
-        const data = await res.json()
-        throw new Error(data.message || 'Login failed')
-      }
-
       const data = await res.json()
       setAuth(data.accessToken, data.user.role, data.user.name)
       navigate(`/dashboard/${data.user.role.toLowerCase()}`)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Login failed')
+      const message = err instanceof Error ? err.message : 'Login failed'
+      setError(message)
+      const lower = message.toLowerCase()
+      if (
+        lower.includes('502') ||
+        lower.includes('bad gateway') ||
+        lower.includes('failed to fetch') ||
+        lower.includes('networkerror') ||
+        lower.includes('network request')
+      ) {
+        setBackendDown(true)
+      }
     } finally {
       setLoading(false)
     }
@@ -57,8 +66,13 @@ export default function LoginPage() {
           <CardDescription className="text-center">Real-Time Fraud Detection System</CardDescription>
         </CardHeader>
         <CardContent>
+          {backendDown && (
+            <div className="mb-4">
+              <BackendUnavailableBanner />
+            </div>
+          )}
           <form onSubmit={handleSubmit} className="space-y-4">
-            {error && (
+            {error && !backendDown && (
               <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md">
                 {error}
               </div>
