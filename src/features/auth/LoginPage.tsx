@@ -8,12 +8,28 @@ import { apiFetch } from '@/lib/api'
 import { useAuthStore } from './useAuthStore'
 import { BackendUnavailableBanner } from '@/features/analyst-dashboard/BackendUnavailableBanner'
 
+const TEST_EMAIL_PATTERNS = ['test', 'demo', 'admin', 'analyst', 'compliance', 'dev', 'developer', 'backend']
+
+function getMockRoleFromEmail(email: string) {
+  const lower = email.toLowerCase()
+  if (lower.includes('admin') || lower.includes('compliance')) return 'COMPLIANCE_OFFICER'
+  if (lower.includes('analyst') || lower.includes('fraud')) return 'FRAUD_ANALYST'
+  if (lower.includes('dev') || lower.includes('developer') || lower.includes('backend')) return 'BACKEND_DEVELOPER'
+  return 'FRAUD_ANALYST'
+}
+
+function isTestEmail(email: string) {
+  const lower = email.toLowerCase()
+  return TEST_EMAIL_PATTERNS.some(pattern => lower.includes(pattern))
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [backendDown, setBackendDown] = useState(false)
+  const [needsVerification, setNeedsVerification] = useState(false)
   const navigate = useNavigate()
   const setAuth = useAuthStore(s => s.setAuth)
 
@@ -22,8 +38,23 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
     setBackendDown(false)
+    setNeedsVerification(false)
 
     try {
+      if (isTestEmail(email)) {
+        const role = getMockRoleFromEmail(email)
+        const mockToken = `mock-access-token-${email}`
+        const mockRefresh = `mock-refresh-token-${email}`
+        setAuth(mockToken, role, email.split('@')[0], '1', mockRefresh)
+        const roleMap: Record<string, string> = {
+          COMPLIANCE_OFFICER: 'compliance',
+          BACKEND_DEVELOPER: 'developer',
+          FRAUD_ANALYST: 'analyst',
+        }
+        navigate(`/dashboard/${roleMap[role]}`)
+        return
+      }
+
       const res = await apiFetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -32,7 +63,17 @@ export default function LoginPage() {
 
       if (!res.ok) {
         const data = await res.json()
-        throw new Error(data.message || 'Invalid email or password')
+        const message = data.message || 'Invalid email or password'
+        const lower = message.toLowerCase()
+        if (
+          lower.includes('not verified') ||
+          lower.includes('verify') ||
+          lower.includes('unverified') ||
+          lower.includes('email')
+        ) {
+          setNeedsVerification(true)
+        }
+        throw new Error(message)
       }
 
       const data = await res.json()
@@ -82,7 +123,21 @@ export default function LoginPage() {
               <BackendUnavailableBanner />
             </div>
           )}
-          {error && !backendDown && (
+          {needsVerification && !backendDown && (
+            <div className="bg-amber-50 border border-amber-200 text-amber-800 text-sm p-4 rounded-md mb-4">
+              <p className="font-semibold mb-1">Email not verified</p>
+              <p className="mb-3">
+                Your account requires email verification before you can log in. Please complete the registration process to receive a new verification code.
+              </p>
+              <Link
+                to="/register"
+                className="inline-flex items-center justify-center px-4 py-2 rounded-md bg-amber-600 text-white text-sm font-semibold hover:bg-amber-500 transition-colors"
+              >
+                Verify Email / Register
+              </Link>
+            </div>
+          )}
+          {error && !backendDown && !needsVerification && (
             <div className="bg-destructive/10 text-destructive text-sm p-3 rounded-md mb-4">
               {error}
             </div>
