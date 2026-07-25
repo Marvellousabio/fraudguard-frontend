@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import { useAuthStore } from '@/features/auth/useAuthStore'
 import LoginPage from '@/features/auth/LoginPage'
+import RegisterPage from '@/features/auth/RegisterPage'
 import AnalystDashboard from '@/features/dashboard/AnalystDashboard'
 import ComplianceDashboard from '@/features/dashboard/ComplianceDashboard'
 import DeveloperDashboard from '@/features/dashboard/DeveloperDashboard'
@@ -25,6 +26,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/login" element={role ? <Navigate to={`/dashboard/${dashboardPath}`} replace /> : <LoginPage />} />
+      <Route path="/register" element={role ? <Navigate to={`/dashboard/${dashboardPath}`} replace /> : <RegisterPage />} />
       <Route path="/dashboard/analyst" element={<ProtectedRoute roles={['FRAUD_ANALYST']}><AnalystDashboard /></ProtectedRoute>} />
       <Route path="/dashboard/compliance" element={<ProtectedRoute roles={['COMPLIANCE_OFFICER']}><ComplianceDashboard /></ProtectedRoute>} />
       <Route path="/dashboard/developer" element={<ProtectedRoute roles={['BACKEND_DEVELOPER']}><DeveloperDashboard /></ProtectedRoute>} />

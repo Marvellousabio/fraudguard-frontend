@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -30,9 +30,20 @@ export default function LoginPage() {
         body: JSON.stringify({ email, password }),
       })
 
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Invalid email or password')
+      }
+
       const data = await res.json()
-      setAuth(data.accessToken, data.user.role, data.user.name)
-      navigate(`/dashboard/${data.user.role.toLowerCase()}`)
+      setAuth(data.accessToken, data.user.role, data.user.name, data.user.id, data.refreshToken)
+      const roleMap: Record<string, string> = {
+        FRAUD_ANALYST: 'analyst',
+        COMPLIANCE_OFFICER: 'compliance',
+        BACKEND_DEVELOPER: 'developer',
+      }
+      const path = roleMap[data.user.role] || 'analyst'
+      navigate(`/dashboard/${path}`)
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Login failed'
       setError(message)
@@ -82,7 +93,7 @@ export default function LoginPage() {
               <Input
                 id="email"
                 type="email"
-                placeholder="admin@fraudguard.com"
+                placeholder="you@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -94,7 +105,7 @@ export default function LoginPage() {
               <Input
                 id="password"
                 type="password"
-                placeholder="any password"
+                placeholder="Enter your password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
@@ -104,10 +115,9 @@ export default function LoginPage() {
             <Button type="submit" className="w-full" disabled={loading}>
               {loading ? 'Signing in...' : 'Sign In'}
             </Button>
-            <div className="text-xs text-muted-foreground text-center space-y-1">
-              <p>Demo accounts (use email as username):</p>
-              <p>admin@fraudguard.com / analyst@fraudguard.com / dev@fraudguard.com</p>
-            </div>
+            <p className="text-xs text-muted-foreground text-center">
+              Don't have an account? <Link to="/register" className="text-primary hover:underline">Create one</Link>
+            </p>
           </form>
         </CardContent>
       </Card>
