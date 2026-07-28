@@ -80,7 +80,7 @@ function mockResponse(path: string): Response {
       const tx = txs.find(t => t.id === id) || txs[0]
       return new Response(JSON.stringify(tx), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 'Content-Type': 'application/json' }
       })
     }
     const page = Number(url.searchParams.get('page') || 1)
@@ -199,7 +199,6 @@ function mockResponse(path: string): Response {
 }
 
 export function initOfflineBypass() {
-  if (!isMockSession()) return
   const originalFetch = window.fetch
   window.fetch = async (input: RequestInfo | URL, init?: RequestInit): Promise<Response> => {
     let path: string
@@ -210,8 +209,11 @@ export function initOfflineBypass() {
     } else {
       path = new URL(input.url).pathname
     }
+
     if (path.startsWith('/auth/') || path.startsWith('/api/') || path.startsWith('/socket.io/')) {
-      return mockResponse(path)
+      if (isMockSession()) {
+        return mockResponse(path)
+      }
     }
     return originalFetch(input, init)
   }
