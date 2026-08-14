@@ -18,8 +18,14 @@ const queryClient = new QueryClient({
   },
 })
 
-initMsw().then(() => {
-  initOfflineBypass()
+async function bootstrap() {
+  const useMocks = import.meta.env.VITE_MOCK_MODE !== 'false'
+
+  if (useMocks) {
+    await initMsw()
+    initOfflineBypass()
+  }
+
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>
       <QueryClientProvider client={queryClient}>
@@ -30,4 +36,6 @@ initMsw().then(() => {
       </QueryClientProvider>
     </React.StrictMode>,
   )
-})
+}
+
+bootstrap()

@@ -8,7 +8,9 @@ interface UseWebSocketOptions {
   url?: string
 }
 
-export function useWebSocket({ onFraudDetected, onAiExplanationUpdated, url = 'http://localhost:3000' }: UseWebSocketOptions) {
+const WS_URL = import.meta.env.VITE_WS_URL || 'http://localhost:3000'
+
+export function useWebSocket({ onFraudDetected, onAiExplanationUpdated, url = WS_URL }: UseWebSocketOptions) {
   const socketRef = useRef<Socket | null>(null)
   const reconnectTimeoutRef = useRef<number | null>(null)
   const reconnectAttemptsRef = useRef(0)

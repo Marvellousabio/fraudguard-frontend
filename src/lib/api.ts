@@ -1,11 +1,24 @@
+import { useAuthStore } from '@/features/auth/useAuthStore'
+
 const isDev = import.meta.env.DEV
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
-export async function apiFetch(path: string, options: RequestInit = {}) {
-  const url = isDev ? path : `${baseUrl}${path}`
+function getUrl(path: string): string {
+  if (isDev) return path
+  return `${baseUrl}${path}`
+}
+
+function getAuthHeader(): Record<string, string> {
+  const token = useAuthStore.getState().accessToken
+  return token ? { Authorization: `Bearer ${token}` } : {}
+}
+
+export async function apiFetch(path: string, options: RequestInit = {}): Promise<Response> {
+  const url = getUrl(path)
 
   const headers: Record<string, string> = {
     'Content-Type': 'application/json',
+    ...getAuthHeader(),
     ...(options.headers as Record<string, string> | undefined),
   }
 
@@ -31,6 +44,6 @@ export async function apiFetch(path: string, options: RequestInit = {}) {
 }
 
 export function apiEventSource(path: string) {
-  const url = isDev ? path : `${baseUrl}${path}`
+  const url = getUrl(path)
   return new EventSource(url)
 }

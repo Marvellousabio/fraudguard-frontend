@@ -6,6 +6,11 @@ export type FeedbackStatus = 'PENDING' | 'CONFIRMED_FRAUD' | 'FALSE_POSITIVE'
 
 export type SimulatorAttackType = 'NORMAL' | 'GEO_VELOCITY_ATTACK' | 'HIGH_VALUE_BURST' | 'CARDING_BOTNET' | 'MIXED_ATTACK'
 
+export interface PreTransactionScore {
+  score: number
+  modelVersion: string
+}
+
 export interface Location {
   lat: number
   lng: number
@@ -40,6 +45,9 @@ export interface Transaction {
   aiExplanation?: AIExplanationResult
   latencyMs: number
   feedbackStatus?: FeedbackStatus
+  preTransactionScore?: PreTransactionScore
+  blockedReason?: string
+  stepUpRequired?: boolean
 }
 
 export interface FraudRule {
