@@ -8,21 +8,6 @@ import { apiFetch } from '@/lib/api'
 import { useAuthStore } from './useAuthStore'
 import { BackendUnavailableBanner } from '@/features/analyst-dashboard/BackendUnavailableBanner'
 
-const TEST_EMAIL_PATTERNS = ['test', 'demo', 'admin', 'analyst', 'compliance', 'dev', 'developer', 'backend']
-
-function getMockRoleFromEmail(email: string) {
-  const lower = email.toLowerCase()
-  if (lower.includes('admin') || lower.includes('compliance')) return 'COMPLIANCE_OFFICER'
-  if (lower.includes('analyst') || lower.includes('fraud')) return 'FRAUD_ANALYST'
-  if (lower.includes('dev') || lower.includes('developer') || lower.includes('backend')) return 'BACKEND_DEVELOPER'
-  return 'FRAUD_ANALYST'
-}
-
-function isTestEmail(email: string) {
-  const lower = email.toLowerCase()
-  return TEST_EMAIL_PATTERNS.some(pattern => lower.includes(pattern))
-}
-
 export default function LoginPage() {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -41,20 +26,6 @@ export default function LoginPage() {
     setNeedsVerification(false)
 
     try {
-      if (isTestEmail(email)) {
-        const role = getMockRoleFromEmail(email)
-        const mockToken = `mock-access-token-${email}`
-        const mockRefresh = `mock-refresh-token-${email}`
-        setAuth(mockToken, role, email.split('@')[0], '1', mockRefresh)
-        const roleMap: Record<string, string> = {
-          COMPLIANCE_OFFICER: 'compliance',
-          BACKEND_DEVELOPER: 'developer',
-          FRAUD_ANALYST: 'analyst',
-        }
-        navigate(`/dashboard/${roleMap[role]}`)
-        return
-      }
-
       const res = await apiFetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

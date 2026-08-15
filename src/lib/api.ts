@@ -1,11 +1,10 @@
 import { useAuthStore } from '@/features/auth/useAuthStore'
 
-const isDev = import.meta.env.DEV
 const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
 
 function getUrl(path: string): string {
-  if (isDev) return path
-  return `${baseUrl}${path}`
+  if (baseUrl) return `${baseUrl}${path}`
+  return path
 }
 
 function getAuthHeader(): Record<string, string> {

@@ -14,15 +14,15 @@ export default defineConfig({
     port: 5173,
     proxy: {
       '/auth': {
-        target: 'http://localhost:3000',
+        target: 'https://fraud-api.ordfellow.com',
         changeOrigin: true,
       },
       '/api': {
-        target: 'http://localhost:3000',
+        target: 'https://fraud-api.ordfellow.com',
         changeOrigin: true,
       },
       '/socket.io': {
-        target: 'http://localhost:3000',
+        target: 'https://fraud-api.ordfellow.com',
         ws: true,
       },
     },
