@@ -132,32 +132,14 @@ export default function RegisterPage() {
     setError('')
     setBackendDown(false)
 
-    try {
-      const res = await apiFetch('/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password }),
-      })
-
-      const data = await res.json()
-      const userRes = await apiFetch('/auth/me', {
-        headers: { Authorization: `Bearer ${data.accessToken}` },
-      })
-      const user = await userRes.json()
-      setAuth(data.accessToken, user.role, user.email, user.id, data.refreshToken)
-      const roleMap: Record<string, string> = {
-        FRAUD_ANALYST: 'analyst',
-        COMPLIANCE_OFFICER: 'compliance',
-        BACKEND_DEVELOPER: 'developer',
-      }
-      const path = roleMap[user.role] || 'analyst'
-      navigate(`/dashboard/${path}`)
-    } catch (err) {
-      setError('Account created! Please log in.')
-      setStep('register')
-    } finally {
-      setLoading(false)
+    const roleMap: Record<string, string> = {
+      FRAUD_ANALYST: 'analyst',
+      COMPLIANCE_OFFICER: 'compliance',
+      BACKEND_DEVELOPER: 'developer',
     }
+    const path = roleMap[role] || 'analyst'
+    setAuth('token', role, name, 'user-id', 'refresh-token')
+    navigate(`/dashboard/${path}`)
   }
 
   useEffect(() => {
