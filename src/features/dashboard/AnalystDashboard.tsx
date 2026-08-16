@@ -65,6 +65,7 @@ export default function AnalystDashboard() {
         const rulesJson = await rulesRes.json();
         setRules(rulesJson);
       }
+      setBackendUnavailable(false);
     } catch (err) {
       console.error('Failed to fetch initial application data:', err);
       setBackendUnavailable(true);
