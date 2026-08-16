@@ -1,12 +1,13 @@
 import { useQuery } from '@tanstack/react-query'
 import { Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from 'recharts'
 import { createTimeBuckets } from '@/shared/utils/time-buckets'
+import { apiFetch } from '@/lib/api'
 
 export function TimeSeriesChart() {
   const { data, isLoading } = useQuery({
     queryKey: ['analytics-timeseries'],
     queryFn: async () => {
-      const res = await fetch('/api/analytics/timeseries')
+      const res = await apiFetch('/api/analytics/timeseries')
       if (!res.ok) throw new Error('Failed')
       return res.json() as Promise<Array<{ timestamp: string; count: number }>>
     },
