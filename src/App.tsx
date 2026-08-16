@@ -23,7 +23,7 @@ function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles:
 
 export default function App() {
   const { role } = useAuthStore()
-  const dashboardPath = role ? roleToPath[role] : 'analyst'
+  const dashboardPath = role ? roleToPath[role] || 'analyst' : 'analyst'
 
   return (
     <Routes>
