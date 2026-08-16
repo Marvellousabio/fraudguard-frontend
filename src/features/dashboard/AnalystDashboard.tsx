@@ -144,9 +144,8 @@ export default function AnalystDashboard() {
   const [activeTab, setActiveTab] = useState<'DASHBOARD' | 'TRANSACTIONS' | 'GEO_MAP' | 'RULES' | 'ANALYTICS' | 'NETWORK'>('DASHBOARD');
   const [filteredEntity, setFilteredEntity] = useState<string | null>(null);
   const [isDarkMode, setIsDarkMode] = useState<boolean>(true);
-  const [isConnected, setIsConnected] = useState<boolean>(false);
+  const [isConnected] = useState<boolean>(false);
   const [tps, setTps] = useState<number>(0);
-  const [backendUnavailable, setBackendUnavailable] = useState<boolean>(false);
 
   // TPS Calculation Ref
   const txCounterRef = useRef<number>(0);
@@ -167,10 +166,8 @@ export default function AnalystDashboard() {
       setTransactions(DUMMY_TRANSACTIONS);
       setAnalytics(DUMMY_ANALYTICS);
       setRules(DUMMY_RULES);
-      setBackendUnavailable(false);
     } catch (err) {
       console.error('Failed to fetch initial application data:', err);
-      setBackendUnavailable(true);
     }
   };
 
@@ -291,9 +288,6 @@ export default function AnalystDashboard() {
 
       {/* Main Body Layout */}
       <main className="max-w-[1600px] mx-auto p-4 lg:p-8 space-y-6">
-        {backendUnavailable && (
-          <BackendUnavailableBanner message="The backend API at the configured base URL is not responding. Displaying limited data." />
-        )}
         {/* KPI Metric Cards Always At Top */}
         <RiskDistributionBar transactions={transactions} />
         <MetricCards summary={analytics?.summary || null} />

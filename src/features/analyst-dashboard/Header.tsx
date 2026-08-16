@@ -3,7 +3,6 @@ import { Shield, Download, Play, Pause, Moon, Sun, LogOut } from 'lucide-react';
 import { SimulatorConfig } from '@/shared/types/fraud';
 import { useAuthStore } from '@/features/auth/useAuthStore';
 import { useNavigate } from 'react-router-dom';
-import { apiFetch } from '@/lib/api';
 
 interface HeaderProps {
   isConnected: boolean;
@@ -28,7 +27,7 @@ export const Header: React.FC<HeaderProps> = ({
   activeTab,
   onSelectTab,
 }) => {
-  const { accessToken, logout } = useAuthStore()
+  const { logout } = useAuthStore()
   const navigate = useNavigate()
 
   const handleSignOut = async () => {

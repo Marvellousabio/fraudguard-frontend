@@ -1,6 +1,5 @@
 import { Routes, Route, Navigate } from 'react-router-dom'
 import LoginPage from '@/features/auth/LoginPage'
-import RegisterPage from '@/features/auth/RegisterPage'
 import ProfileSettingsPage from '@/features/auth/ProfileSettingsPage'
 import AnalystDashboard from '@/features/dashboard/AnalystDashboard'
 import ComplianceDashboard from '@/features/dashboard/ComplianceDashboard'
