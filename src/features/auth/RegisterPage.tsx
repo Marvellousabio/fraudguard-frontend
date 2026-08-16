@@ -140,13 +140,14 @@ export default function RegisterPage() {
       })
 
       const data = await res.json()
-      setAuth(data.accessToken, data.user.role, data.user.name, data.user.id, data.refreshToken)
+      const user = data.user ?? data
+      setAuth(data.accessToken ?? '', user.role, user.name ?? user.email, user.id, data.refreshToken)
       const roleMap: Record<string, string> = {
         FRAUD_ANALYST: 'analyst',
         COMPLIANCE_OFFICER: 'compliance',
         BACKEND_DEVELOPER: 'developer',
       }
-      const path = roleMap[data.user.role] || 'analyst'
+      const path = roleMap[user.role] || 'analyst'
       navigate(`/dashboard/${path}`)
     } catch (err) {
       setError('Account created! Please log in.')

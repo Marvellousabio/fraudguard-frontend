@@ -36,7 +36,7 @@ export default function ComplianceDashboard() {
   const { data: summary } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: async () => {
-      const res = await fetch('/api/analytics/summary')
+      const res = await apiFetch('/api/analytics/summary')
       if (!res.ok) throw new Error('Failed')
       return res.json()
     },
@@ -45,7 +45,7 @@ export default function ComplianceDashboard() {
   const { data: transactions } = useQuery({
     queryKey: ['flagged-transactions'],
     queryFn: async () => {
-      const res = await fetch('/api/transactions/flagged?pageSize=100')
+      const res = await apiFetch('/api/transactions/flagged?pageSize=100')
       if (!res.ok) throw new Error('Failed')
       const json = await res.json()
       return json.data as FlaggedTransaction[]

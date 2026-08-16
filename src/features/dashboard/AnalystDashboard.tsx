@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import type { AnalyticsSummary, HeatmapPoint, SimulatorConfig, Transaction, FraudRule } from '@/shared/types/fraud';
-import { apiFetch } from '@/lib/api';
+import { apiFetch, apiEventSource } from '@/lib/api';
 import { Header } from '@/features/analyst-dashboard/Header';
 import { MetricCards } from '@/features/analyst-dashboard/MetricCards';
 import { LiveFeedTicker } from '@/features/analyst-dashboard/LiveFeedTicker';
@@ -77,7 +77,7 @@ export default function AnalystDashboard() {
 
   // SSE Real-Time Stream Receiver
   useEffect(() => {
-    const eventSource = new EventSource('/api/stream/transactions');
+    const eventSource = apiEventSource('/api/stream/transactions');
 
     eventSource.onopen = () => {
       setIsConnected(true);
@@ -124,7 +124,7 @@ export default function AnalystDashboard() {
   // Update Simulator Settings
   const handleUpdateSimulator = async (newConfig: Partial<SimulatorConfig>) => {
     try {
-      const res = await fetch('/api/simulator/config', {
+      const res = await apiFetch('/api/simulator/config', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(newConfig),
@@ -142,7 +142,7 @@ export default function AnalystDashboard() {
   // Update Fraud Rule
   const handleUpdateRule = async (rule: FraudRule) => {
     try {
-      const res = await fetch(`/api/rules/${rule.id}`, {
+      const res = await apiFetch(`/api/rules/${rule.id}`, {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(rule),
@@ -160,7 +160,7 @@ export default function AnalystDashboard() {
   // Trigger Gemini AI Fraud Explanation
   const handleGenerateAIExplanation = async (tx: Transaction) => {
     try {
-      const res = await fetch('/api/fraud/ai-explain', {
+      const res = await apiFetch('/api/fraud/ai-explain', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transactionId: tx.id }),
@@ -189,7 +189,7 @@ export default function AnalystDashboard() {
     status: 'CONFIRMED_FRAUD' | 'FALSE_POSITIVE'
   ) => {
     try {
-      const res = await fetch('/api/feedback', {
+      const res = await apiFetch('/api/feedback', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ transactionId: txId, status }),
@@ -211,7 +211,8 @@ export default function AnalystDashboard() {
 
   // Export CSV
   const handleExportCsv = () => {
-    window.open('/api/export/transactions', '_blank');
+    const baseUrl = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '')
+    window.open(`${baseUrl}/api/export/transactions`, '_blank');
   };
 
   return (

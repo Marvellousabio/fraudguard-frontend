@@ -2,12 +2,13 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Activity, TrendingUp, Zap } from 'lucide-react'
+import { apiFetch } from '@/lib/api'
 
 export function SummaryStats() {
   const { data: summary, isLoading } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: async () => {
-      const res = await fetch('/api/analytics/summary')
+      const res = await apiFetch('/api/analytics/summary')
       if (!res.ok) throw new Error('Failed')
       return res.json() as Promise<{
         totalFlaggedToday: number
