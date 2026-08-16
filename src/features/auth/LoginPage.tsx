@@ -20,7 +20,7 @@ export default function LoginPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setAuth('token', 'FRAUD_ANALYST', email, 'user-id', 'refresh-token')
+    //setAuth('token', 'FRAUD_ANALYST', email, 'user-id', 'refresh-token')
     navigate('/dashboard/analyst')
   }
 
