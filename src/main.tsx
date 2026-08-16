@@ -3,8 +3,8 @@ import ReactDOM from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from '@/components/ui/toaster'
-import { initMsw } from '@/mocks/worker'
-import { initOfflineBypass } from '@/mocks/offlineBypass'
+// import { initMsw } from '@/mocks/worker'
+// import { initOfflineBypass } from '@/mocks/offlineBypass'
 import App from './App'
 import './index.css'
 
@@ -19,12 +19,12 @@ const queryClient = new QueryClient({
 })
 
 async function bootstrap() {
-  const useMocks = import.meta.env.VITE_MOCK_MODE !== 'false'
+  // const useMocks = import.meta.env.VITE_MOCK_MODE !== 'false'
 
-  if (useMocks) {
-    await initMsw()
-    initOfflineBypass()
-  }
+  // if (useMocks) {
+  //   await initMsw()
+  //   initOfflineBypass()
+  // }
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

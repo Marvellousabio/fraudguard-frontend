@@ -2,20 +2,26 @@ import { useQuery } from '@tanstack/react-query'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Activity, TrendingUp, Zap } from 'lucide-react'
-import { apiFetch } from '@/lib/api'
+// import { apiFetch } from '@/lib/api'
+
+const MOCK_SUMMARY = {
+  totalFlaggedToday: 1247,
+  breakdownByRule: { INTELLIGENT_ANOMALY: 420, GEO_VELOCITY: 380, HIGH_VALUE: 280, DAILY_LIMIT: 167 },
+  averageRiskScore: 0.42,
+  ahnlichP99Latency: 32,
+}
 
 export function SummaryStats() {
   const { data: summary, isLoading } = useQuery({
     queryKey: ['analytics-summary'],
     queryFn: async () => {
-      const res = await apiFetch('/api/analytics/summary')
-      if (!res.ok) throw new Error('Failed')
-      return res.json() as Promise<{
-        totalFlaggedToday: number
-        breakdownByRule: Record<string, number>
-        averageRiskScore: number
-        ahnlichP99Latency: number
-      }>
+      // return res.json() as Promise<{
+      //   totalFlaggedToday: number
+      //   breakdownByRule: Record<string, number>
+      //   averageRiskScore: number
+      //   ahnlichP99Latency: number
+      // }>
+      return MOCK_SUMMARY
     },
     refetchInterval: 10000,
   })

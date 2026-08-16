@@ -32,20 +32,8 @@ export const Header: React.FC<HeaderProps> = ({
   const navigate = useNavigate()
 
   const handleSignOut = async () => {
-    try {
-      await apiFetch('/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${accessToken}`,
-        },
-      })
-    } catch {
-      // Ignore logout API errors — clear local state regardless
-    } finally {
-      logout()
-      navigate('/login')
-    }
+    logout()
+    navigate('/login')
   }
   return (
     <header className="sticky top-0 z-30 border-b border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md px-4 lg:px-8 py-3 transition-colors">
