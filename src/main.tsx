@@ -19,12 +19,8 @@ const queryClient = new QueryClient({
 })
 
 async function bootstrap() {
-  const useMocks = import.meta.env.VITE_MOCK_MODE !== 'false'
-
-  if (useMocks) {
-    await initMsw()
-    initOfflineBypass()
-  }
+  await initMsw()
+  initOfflineBypass()
 
   ReactDOM.createRoot(document.getElementById('root')!).render(
     <React.StrictMode>

@@ -9,21 +9,6 @@ import { apiFetch } from '@/lib/api'
 import { useAuthStore } from './useAuthStore'
 import { BackendUnavailableBanner } from '@/features/analyst-dashboard/BackendUnavailableBanner'
 
-const TEST_EMAIL_PATTERNS = ['test', 'demo', 'admin', 'analyst', 'compliance', 'dev', 'developer', 'backend']
-
-function getMockRoleFromEmail(email: string) {
-  const lower = email.toLowerCase()
-  if (lower.includes('admin') || lower.includes('compliance')) return 'COMPLIANCE_OFFICER'
-  if (lower.includes('analyst') || lower.includes('fraud')) return 'FRAUD_ANALYST'
-  if (lower.includes('dev') || lower.includes('developer') || lower.includes('backend')) return 'BACKEND_DEVELOPER'
-  return 'FRAUD_ANALYST'
-}
-
-function isTestEmail(email: string) {
-  const lower = email.toLowerCase()
-  return TEST_EMAIL_PATTERNS.some(pattern => lower.includes(pattern))
-}
-
 type Step = 'register' | 'verify-otp' | 'set-password' | 'success'
 
 export default function RegisterPage() {
@@ -56,52 +41,39 @@ export default function RegisterPage() {
     }
   }
 
-const handleRegister = async (e: React.FormEvent) => {
-     e.preventDefault()
-     setLoading(true)
-     setError('')
-     setBackendDown(false)
+  const handleRegister = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setLoading(true)
+    setError('')
+    setBackendDown(false)
 
-     if (isTestEmail(email)) {
-       setDisplayedOtp('123456')
-       setStep('verify-otp')
-       setLoading(false)
-       return
-     }
+    try {
+      const res = await apiFetch('/auth/register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, name, role }),
+      })
 
-     try {
-       const res = await apiFetch('/auth/register', {
-         method: 'POST',
-         headers: { 'Content-Type': 'application/json' },
-         body: JSON.stringify({ email, name, role }),
-       })
+      if (!res.ok) {
+        const data = await res.json()
+        throw new Error(data.message || 'Registration failed')
+      }
 
-       if (!res.ok) {
-         const data = await res.json()
-         throw new Error(data.message || 'Registration failed')
-       }
-
-       const data = await res.json()
-       setDisplayedOtp(data.otp)
-       setStep('verify-otp')
-     } catch (err) {
-       handleBackendError(err)
-     } finally {
-       setLoading(false)
-     }
-   }
+      const data = await res.json()
+      setDisplayedOtp(data.otp)
+      setStep('verify-otp')
+    } catch (err) {
+      handleBackendError(err)
+    } finally {
+      setLoading(false)
+    }
+  }
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault()
     setLoading(true)
     setError('')
     setBackendDown(false)
-
-    if (isTestEmail(email)) {
-      setStep('set-password')
-      setLoading(false)
-      return
-    }
 
     try {
       const res = await apiFetch('/auth/verify-otp', {
@@ -128,12 +100,6 @@ const handleRegister = async (e: React.FormEvent) => {
     setLoading(true)
     setError('')
     setBackendDown(false)
-
-    if (isTestEmail(email)) {
-      setStep('success')
-      setLoading(false)
-      return
-    }
 
     if (password !== confirmPassword) {
       setError('Passwords do not match')
@@ -167,20 +133,6 @@ const handleRegister = async (e: React.FormEvent) => {
     setBackendDown(false)
 
     try {
-      if (isTestEmail(email)) {
-        const role = getMockRoleFromEmail(email)
-        const mockToken = `mock-access-token-${email}`
-        const mockRefresh = `mock-refresh-token-${email}`
-        setAuth(mockToken, role, name || email.split('@')[0], '1', mockRefresh)
-        const roleMap: Record<string, string> = {
-          COMPLIANCE_OFFICER: 'compliance',
-          BACKEND_DEVELOPER: 'developer',
-          FRAUD_ANALYST: 'analyst',
-        }
-        navigate(`/dashboard/${roleMap[role]}`)
-        return
-      }
-
       const res = await apiFetch('/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -188,13 +140,17 @@ const handleRegister = async (e: React.FormEvent) => {
       })
 
       const data = await res.json()
-      setAuth(data.accessToken, data.user.role, data.user.name, data.user.id, data.refreshToken)
+      const userRes = await apiFetch('/auth/me', {
+        headers: { Authorization: `Bearer ${data.accessToken}` },
+      })
+      const user = await userRes.json()
+      setAuth(data.accessToken, user.role, user.email, user.id, data.refreshToken)
       const roleMap: Record<string, string> = {
         FRAUD_ANALYST: 'analyst',
         COMPLIANCE_OFFICER: 'compliance',
         BACKEND_DEVELOPER: 'developer',
       }
-      const path = roleMap[data.user.role] || 'analyst'
+      const path = roleMap[user.role] || 'analyst'
       navigate(`/dashboard/${path}`)
     } catch (err) {
       setError('Account created! Please log in.')
