@@ -16,8 +16,8 @@ const roleToPath: Record<string, string> = {
 
 function ProtectedRoute({ children, roles }: { children: React.ReactNode; roles: string[] }) {
   const { role } = useAuthStore()
-  if (!role) return <Navigate to="/login" replace />
-  if (!roles.includes(role)) return <Navigate to="/login" replace />
+  if (!role) return <Navigate to="/dashboard/analyst" replace />
+  if (!roles.includes(role)) return <Navigate to="/dashboard/analyst" replace />
   return <>{children}</>
 }
 
