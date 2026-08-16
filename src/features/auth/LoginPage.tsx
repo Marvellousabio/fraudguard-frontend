@@ -18,21 +18,10 @@ export default function LoginPage() {
   const navigate = useNavigate()
   const setAuth = useAuthStore(s => s.setAuth)
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    setLoading(true)
-    setError('')
-    setBackendDown(false)
-    setNeedsVerification(false)
-
-    const roleMap: Record<string, string> = {
-      FRAUD_ANALYST: 'analyst',
-      COMPLIANCE_OFFICER: 'compliance',
-      BACKEND_DEVELOPER: 'developer',
-    }
-    const path = roleMap['FRAUD_ANALYST'] || 'analyst'
     setAuth('token', 'FRAUD_ANALYST', email, 'user-id', 'refresh-token')
-    navigate(`/dashboard/${path}`)
+    navigate('/dashboard/analyst')
   }
 
   return (

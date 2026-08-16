@@ -31,7 +31,7 @@ export default function App() {
       <Route path="/login" element={role ? <Navigate to={`/dashboard/${dashboardPath}`} replace /> : <LoginPage />} />
       <Route path="/register" element={role ? <Navigate to={`/dashboard/${dashboardPath}`} replace /> : <RegisterPage />} />
       <Route path="/profile" element={<ProtectedRoute roles={['FRAUD_ANALYST', 'COMPLIANCE_OFFICER', 'BACKEND_DEVELOPER']}><ProfileSettingsPage /></ProtectedRoute>} />
-      <Route path="/dashboard/analyst" element={<ProtectedRoute roles={['FRAUD_ANALYST']}><AnalystDashboard /></ProtectedRoute>} />
+      <Route path="/dashboard/analyst" element={<AnalystDashboard />} />
       <Route path="/dashboard/compliance" element={<ProtectedRoute roles={['COMPLIANCE_OFFICER']}><ComplianceDashboard /></ProtectedRoute>} />
       <Route path="/dashboard/developer" element={<ProtectedRoute roles={['BACKEND_DEVELOPER']}><DeveloperDashboard /></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/login" replace />} />

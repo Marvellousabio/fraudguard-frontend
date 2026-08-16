@@ -128,18 +128,8 @@ export default function RegisterPage() {
   }
 
   const handleAutoLogin = async () => {
-    setLoading(true)
-    setError('')
-    setBackendDown(false)
-
-    const roleMap: Record<string, string> = {
-      FRAUD_ANALYST: 'analyst',
-      COMPLIANCE_OFFICER: 'compliance',
-      BACKEND_DEVELOPER: 'developer',
-    }
-    const path = roleMap[role] || 'analyst'
-    setAuth('token', role, name, 'user-id', 'refresh-token')
-    navigate(`/dashboard/${path}`)
+    setAuth('token', 'FRAUD_ANALYST', name, 'user-id', 'refresh-token')
+    navigate('/dashboard/analyst')
   }
 
   useEffect(() => {
