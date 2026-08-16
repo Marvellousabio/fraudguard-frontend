@@ -11,7 +11,7 @@ export default function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={<Navigate to="/dashboard/analyst" replace />} />
+      <Route path="/login" element={<LoginPage />} />
       <Route path="/register" element={<Navigate to="/dashboard/analyst" replace />} />
       <Route path="/profile" element={<ProfileSettingsPage />} />
       <Route path="/dashboard/analyst" element={<AnalystDashboard />} />
